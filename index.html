@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff5f6" />
+    <title>Для Машеньки — от Заи</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="tabs" aria-label="Разделы сайта">
+        <button class="tab active" data-tab="love">от Заи</button>
+        <button class="tab" data-tab="days">наши дни</button>
+        <button class="tab" data-tab="memory">первый раз</button>
+      </nav>
+
+      <section class="panel active" id="love">
+        <p class="eyebrow">для моей Машеньки</p>
+        <div class="hero-mark" aria-hidden="true">♡</div>
+        <h1>Ты моя<br /><em>вторая половина.</em></h1>
+        <p class="lead">И я очень счастлив, что однажды встретил тебя.</p>
+        <button class="love-button" id="reveal-button">нажми сюда, Машенька <span>→</span></button>
+        <p class="hidden-note" id="love-note" aria-live="polite">
+          Я люблю твой смех, твой взгляд и каждую обычную минуту, которая рядом с тобой становится особенной.<br />
+          <strong>Твой Зая ♡</strong>
+        </p>
+      </section>
+
+      <section class="panel" id="days">
+        <p class="eyebrow">маленькая наша математика</p>
+        <h2>Самое важное<br />считается в днях.</h2>
+        <div class="counters">
+          <article><strong>107</strong><span>дней мы вместе</span></article>
+          <article><strong>258</strong><span>дней до годовщины</span></article>
+          <article><strong>97</strong><span>дней до первого<br />Нового года</span></article>
+        </div>
+        <div class="slider-card">
+          <label for="love-range">насколько сильно я тебя люблю?</label>
+          <input id="love-range" type="range" min="1" max="5" value="5" />
+          <p id="range-result">бесконечно. Даже ползунка не хватает ♡</p>
+        </div>
+      </section>
+
+      <section class="panel" id="memory">
+        <p class="eyebrow">глава первая</p>
+        <h2>Арбат,<br /><em>Алматы.</em></h2>
+        <p class="lead">Место, где мы встретились впервые и началась наша история.</p>
+        <div class="timeline" aria-label="Ползунок воспоминаний">
+          <input id="memory-range" type="range" min="0" max="2" value="0" />
+          <div class="timeline-labels"><span>Арбат</span><span>первый взгляд</span><span>мы сейчас</span></div>
+        </div>
+        <p class="memory-text" id="memory-text">Там всё началось. И я бы снова выбрал тот же путь — к тебе.</p>
+        <p class="song">♫ «Вторая половина» — Братья Гримм</p>
+      </section>
+    </main>
+    <footer>сделано с любовью, для Машеньки</footer>
+    <script src="script.js"></script>
+  </body>
+</html>
