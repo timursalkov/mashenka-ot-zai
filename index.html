@@ -131,9 +131,23 @@ function evaluate(cards){
 }
 function compare(a,b){for(var i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)>(b[i]||0)?1:-1}return 0}
 function showdown(){
- var a=evaluate(state.players[0].cards||[]),b=evaluate(state.players[1].cards||[]);
- state.result={winner:compare(a,b)>=0?0:1,type:"showdown",pot:state.pot};
- state.players[state.result.winner].stack+=state.pot;log(state.players[state.result.winner].name+" выигрывает "+money(state.pot));render();
+ state.result={winner:null,type:"showdown",pot:state.pot};
+ log("Вскрытие · выберите победителя");
+ render();
+}
+function award(winner){
+ if(!state.result)return;
+ if(winner===-1){
+   var half=Math.floor(state.pot/2);
+   state.players[0].stack+=half;
+   state.players[1].stack+=state.pot-half;
+   log("Ничья · банк разделён");
+ }else{
+   state.players[winner].stack+=state.pot;
+   state.result.winner=winner;
+   log(state.players[winner].name+" выигрывает "+money(state.pot));
+ }
+ render();
 }
 function renderPlayer(i){
  var p=state.players[i],call=callAmount(i),can=!state.result&&i===state.turn&&!p.fold&&!p.allin;
@@ -144,7 +158,10 @@ function renderPlayer(i){
 }
 function resultModal(){
  if(!state.result)return "";
- var r=state.result,w=state.players[r.winner];
+ var r=state.result;
+ if(r.type==="showdown"&&r.winner===null)return '<div class="modal"><div class="modalbox"><h2>Вскрытие</h2><p class="muted" style="margin:8px 0 12px">Карты настоящие — выберите результат вручную.</p><div class="buttons"><button id="win0" class="btn primary">'+esc(state.players[0].name)+' выиграл</button><button id="win1" class="btn primary">'+esc(state.players[1].name)+' выиграл</button><button id="split" class="btn wide">Ничья / разделить банк</button></div></div></div>';
+ if(r.winner===-1)return '<div class="modal"><div class="modalbox"><h2>Ничья</h2><div class="row"><span>Банк</span><b>'+money(r.pot)+'</b></div><button id="next" class="btn primary" style="width:100%;margin-top:8px">Следующая раздача</button></div></div>';
+ var w=state.players[r.winner];
  return '<div class="modal"><div class="modalbox"><h2>'+esc(w.name)+' забирает банк</h2><div class="row"><span>Банк</span><b>'+money(r.pot)+'</b></div><div class="row"><span>Стек '+esc(state.players[0].name)+'</span><b>'+money(state.players[0].stack)+'</b></div><div class="row"><span>Стек '+esc(state.players[1].name)+'</span><b>'+money(state.players[1].stack)+'</b></div><button id="next" class="btn primary" style="width:100%;margin-top:8px">Следующая раздача</button></div></div>';
 }
 function render(){
@@ -159,6 +176,10 @@ function render(){
    if(a==="amount"){var n=Number(document.getElementById("amount"+i).value);action(i,state.current?"raise":"bet",n)}
    else action(i,a);
  })});
+ var w0=document.getElementById("win0"),w1=document.getElementById("win1"),split=document.getElementById("split");
+ if(w0)w0.addEventListener("click",function(){award(0)});
+ if(w1)w1.addEventListener("click",function(){award(1)});
+ if(split)split.addEventListener("click",function(){award(-1)});
  var next=document.getElementById("next");if(next)next.addEventListener("click",function(){state.dealer=1-state.dealer;newHand()});
 }
 setup();
