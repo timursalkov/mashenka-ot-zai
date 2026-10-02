@@ -82,7 +82,13 @@ function advance(){
  else if(S.street==="flop"){S.board.push(S.deck.pop());S.street="turn"}
  else if(S.street==="turn"){S.board.push(S.deck.pop());S.street="river"}
  else {showdown();return}
- S.contrib=[0,0];S.acted=[false,false];S.currentBet=0;S.turn=(S.dealer+1)%2;
+ S.contrib=[0,0];S.acted=[false,false];S.currentBet=0;
+ var everyoneAllIn=S.players.every(function(p){return p.fold||p.allin});
+ if(everyoneAllIn){
+   while(S.board.length<5)S.board.push(S.deck.pop());
+   S.street="river";showdown();return;
+ }
+ S.turn=(S.dealer+1)%2;
  while(S.players[S.turn].fold||S.players[S.turn].allin)S.turn=S.turn===0?1:0;
  log("Открыт "+({flop:"флоп",turn:"тёрн",river:"ривер"})[S.street]);render();
 }
