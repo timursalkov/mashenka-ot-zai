@@ -49,6 +49,10 @@ function activeCount(){return S.players.filter(function(p){return !p.fold}).leng
 function roundDone(){
  var live=S.players.filter(function(p){return !p.fold&&!p.allin});
  if(live.length===0)return true;
+ if(S.players.some(function(p){return p.allin})){
+   if(live.length===1)return S.contrib[0]===S.contrib[1];
+   return false;
+ }
  if(live.length===1)return true;
  return S.acted[0]&&S.acted[1]&&S.contrib[0]===S.contrib[1];
 }
