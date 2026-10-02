@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07100c">
+<title>Poker — Offline Cash Game</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#07100c;color:#f4f0e7;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+body{padding:0}.app{max-width:1050px;margin:auto;padding:14px 12px 30px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.brand{font-size:22px;font-weight:900}.sub{font-size:11px;color:#839088;margin-top:3px}
+button,input{font:inherit}button{cursor:pointer}.btn{border:1px solid #304239;background:#142019;color:#e9eee9;border-radius:11px;padding:10px 13px;font-weight:800}.gold{background:#d9b56b;border-color:#d9b56b;color:#17130b}.danger{background:#5a2626;border-color:#763636}.setup,.history{background:#0e1914;border:1px solid #24362d;border-radius:20px}.setup{max-width:760px;margin:7vh auto 0;padding:25px}.setup h1{font-size:44px;line-height:1;margin:6px 0 10px}.setup p{color:#a5b0a9;line-height:1.55}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;color:#89978f}.field input{width:100%;padding:13px;border-radius:12px;border:1px solid #31463a;background:#09110d;color:#fff;outline:0}.wide{width:100%;margin-top:14px}
+.table{background:radial-gradient(circle at 50% 10%,#24563e,#103321 55%,#0a2418);border:1px solid #315d46;border-radius:24px;padding:14px;min-height:475px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 70px #0008}.pot{text-align:center}.pot small{display:block;color:#aec0b5;font-size:10px;text-transform:uppercase;letter-spacing:.13em}.pot b{display:block;font-size:29px;margin-top:2px}.street{text-align:center;color:#b6c4bc;font-size:11px;margin-top:4px}.board{display:flex;justify-content:center;gap:6px;min-height:68px;align-items:center;flex-wrap:wrap}.card{width:47px;height:65px;background:#fbf8f0;color:#171717;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;box-shadow:0 5px 12px #0005}.red{color:#b93636}.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}.player{background:#0b1711dd;border:1px solid #284036;border-radius:16px;padding:13px}.player.active{border-color:#d9b56b;box-shadow:0 0 0 1px #d9b56b33}.ph{display:flex;justify-content:space-between;gap:8px}.name{font-weight:900}.stack{color:#d9b56b;font-weight:900;font-size:13px}.cards{display:flex;gap:5px;margin:10px 0}.hole{width:36px;height:50px;font-size:15px}.back{background:repeating-linear-gradient(45deg,#2a5475 0 4px,#18364e 4px 8px);color:transparent;border:2px solid #e8e1d3}.bet{font-size:11px;color:#8f9d95}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.actions button{min-height:42px}.raise{display:flex;gap:6px;margin-top:7px}.raise input{min-width:0;flex:1;padding:10px;border-radius:10px;border:1px solid #31463a;background:#08100c;color:#fff}.raise .btn{padding:9px}.disabled{opacity:.35;pointer-events:none}.history{margin-top:10px;padding:13px}.history h3{margin:0 0 8px;font-size:13px}.log{display:grid;gap:5px;max-height:145px;overflow:auto}.log div{font-size:11px;color:#9ba8a1}.empty{text-align:center;color:#69766f;padding:15px}.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:20}.modal-card{max-width:500px;width:100%;background:#101b16;border:1px solid #2b4035;border-radius:20px;padding:21px}.modal-card h2{margin:0 0 14px}.row{display:flex;justify-content:space-between;gap:10px;padding:11px;background:#0a120e;border-radius:10px;margin-top:7px;font-size:13px}.win{color:#d9b56b;font-weight:900}.note{margin-top:12px;color:#aab5ae;font-size:12px;line-height:1.5}
+@media(max-width:680px){.app{padding:10px 9px 22px}.setup{margin-top:3vh;padding:20px}.setup h1{font-size:36px}.grid,.players{grid-template-columns:1fr}.table{min-height:455px;padding:11px}.actions{grid-template-columns:repeat(2,1fr)}.actions .fold{grid-column:span 2}.top{align-items:flex-start}.card{width:43px;height:60px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var app=document.getElementById("app");
+var S={screen:"setup",players:[],deck:[],board:[],street:"preflop",pot:0,turn:0,currentBet:0,contrib:[0,0],acted:[false,false],sb:500,bb:1000,dealer:0,hand:0,log:[],showdown:false,winner:null};
+
+function esc(x){return String(x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]})}
+function money(n){return Math.round(n).toLocaleString("ru-RU")+" ₸"}
+function ranks(){return ["2","3","4","5","6","7","8","9","10","J","Q","K","A"]}
+var suits=[["♠","black"],["♥","red"],["♦","red"],["♣","black"]];
+function deck(){var d=[],r=ranks();for(var i=0;i<r.length;i++)for(var j=0;j<suits.length;j++)d.push({rank:r[i],suit:suits[j][0]});return d.sort(function(){return Math.random()-.5})}
+function ctext(c){return c.rank+c.suit}
+function card(c,hidden){if(hidden)return '<span class="card hole back">?</span>';return '<span class="card hole '+(c.suit==="♥"||c.suit==="♦"?"red":"")+'">'+ctext(c)+'</span>'}
+function log(x){S.log.unshift(x);S.log=S.log.slice(0,35)}
+function setup(){
+ app.innerHTML='<main class="app"><section class="setup"><div class="sub">OFFLINE CASH GAME · 2 PLAYERS</div><h1>♠ Poker</h1><p>Один телефон между двумя игроками. Приложение ведёт стек, банк, блайнды и все действия: чек, бет, колл, рейз, фолд и all-in. Реальные деньги приложение не принимает — это офлайн-счётчик.</p><div class="grid"><div class="field"><label>Игрок 1</label><input id="n0" value="Тимур"></div><div class="field"><label>Игрок 2</label><input id="n1" value="Маша"></div><div class="field"><label>Стартовый стек, ₸</label><input id="stack" type="number" min="1" value="20000"></div><div class="field"><label>Блайнды, SB / BB</label><input id="blinds" value="500 / 1000"></div></div><button class="btn gold wide" onclick="start()">Начать игру</button></section></main>';
+}
+function start(){
+ var st=Number(document.getElementById("stack").value)||20000;
+ var b=document.getElementById("blinds").value.split("/").map(function(x){return Number(x.trim())});
+ S.sb=b[0]||500;S.bb=b[1]||1000;
+ S.players=[{name:document.getElementById("n0").value.trim()||"Игрок 1",stack:st,cards:[],fold:false,allin:false},
+            {name:document.getElementById("n1").value.trim()||"Игрок 2",stack:st,cards:[],fold:false,allin:false}];
+ S.screen="game";S.dealer=0;S.log=[];newHand();
+}
+function post(i,amount){var p=S.players[i],a=Math.min(amount,p.stack);p.stack-=a;S.contrib[i]=a;S.pot+=a;if(p.stack===0)p.allin=true}
+function newHand(){
+ S.hand++;S.deck=deck();S.board=[];S.pot=0;S.contrib=[0,0];S.acted=[false,false];S.currentBet=S.bb;S.street="preflop";S.showdown=false;S.winner=null;
+ for(var i=0;i<2;i++){S.players[i].cards=[S.deck.pop(),S.deck.pop()];S.players[i].fold=false;S.players[i].allin=false}
+ var sb=(S.dealer+1)%2,bb=S.dealer;post(sb,S.sb);post(bb,S.bb);S.turn=sb;log("Раздача #"+S.hand+" · SB "+money(S.sb)+" · BB "+money(S.bb));render();
+}
+function callAmt(i){return Math.max(0,S.currentBet-S.contrib[i])}
+function activeCount(){return S.players.filter(function(p){return !p.fold}).length}
+function roundDone(){
+ var live=S.players.filter(function(p){return !p.fold&&!p.allin});
+ if(live.length===0)return true;
+ if(live.length===1)return true;
+ return S.acted[0]&&S.acted[1]&&S.contrib[0]===S.contrib[1];
+}
+function act(i,type,amount){
+ if(S.showdown||i!==S.turn)return;
+ var p=S.players[i],call=callAmt(i);
+ if(p.fold||p.allin)return;
+ if(type==="fold"){p.fold=true;log(p.name+" · фолд");finishFold(i);return}
+ if(type==="check"&&call>0){alert("Нельзя чекнуть — нужно коллировать или рейзить.");return}
+ if(type==="call"){
+   if(call>p.stack)amount=p.stack;else amount=call;
+   p.stack-=amount;S.contrib[i]+=amount;S.pot+=amount;if(p.stack===0)p.allin=true;log(p.name+" · колл "+money(amount));
+ }else if(type==="check"){log(p.name+" · чек")}
+ else if(type==="bet"||type==="raise"){
+   if(amount<=S.currentBet){alert("Сумма должна быть больше текущей ставки.");return}
+   var add=amount-S.contrib[i];if(add>p.stack){alert("Недостаточно стека.");return}
+   p.stack-=add;S.contrib[i]=amount;S.pot+=add;S.currentBet=amount;S.acted=[false,false];log(p.name+" · "+(type==="bet"?"бет ":"рейз до ")+money(amount));
+ }else if(type==="allin"){
+   var target=S.contrib[i]+p.stack;p.stack=0;var add=target-S.contrib[i];S.contrib[i]=target;S.pot+=add;p.allin=true;
+   if(target>S.currentBet){S.currentBet=target;S.acted=[false,false]}
+   log(p.name+" · ALL-IN "+money(target));
+ }
+ S.acted[i]=true;
+ if(roundDone()){advance();return}
+ next();
+}
+function next(){S.turn=S.turn===0?1:0;while(S.players[S.turn].fold||S.players[S.turn].allin)S.turn=S.turn===0?1:0;render()}
+function advance(){
+ if(activeCount()===1){finishFold(S.players[0].fold?0:1);return}
+ if(S.street==="preflop"){S.board.push(S.deck.pop(),S.deck.pop(),S.deck.pop());S.street="flop"}
+ else if(S.street==="flop"){S.board.push(S.deck.pop());S.street="turn"}
+ else if(S.street==="turn"){S.board.push(S.deck.pop());S.street="river"}
+ else {showdown();return}
+ S.contrib=[0,0];S.acted=[false,false];S.currentBet=0;S.turn=(S.dealer+1)%2;
+ while(S.players[S.turn].fold||S.players[S.turn].allin)S.turn=S.turn===0?1:0;
+ log("Открыт "+({flop:"флоп",turn:"тёрн",river:"ривер"})[S.street]);render();
+}
+function finishFold(loser){
+ var winner=loser===0?1:0;S.players[winner].stack+=S.pot;S.winner=winner;S.showdown=true;log(S.players[winner].name+" забирает "+money(S.pot));render();
+}
+var rv=["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+function val(r){return rv.indexOf(r)+2}
+var handNames=["старшая карта","пара","две пары","тройка","стрит","флеш","фулл-хаус","каре","стрит-флеш"];
+function evaluate(cs){
+ var count={},by={};cs.forEach(function(c){count[c.rank]=(count[c.rank]||0)+1;(by[c.suit]||(by[c.suit]=[])).push(val(c.rank))});
+ var groups=Object.keys(count).map(function(r){return [count[r],val(r)]}).sort(function(a,b){return b[0]-a[0]||b[1]-a[1]});
+ var flush=null;Object.keys(by).forEach(function(s){if(by[s].length>=5)flush=by[s]});
+ var vals=Array.from(new Set(cs.map(function(c){return val(c.rank)}))).sort(function(a,b){return b-a});if(vals.indexOf(14)>=0)vals.push(1);
+ var sh=0;for(var i=0;i<=vals.length-5;i++)if(vals[i]-vals[i+4]===4){sh=vals[i];break}
+ if(flush){var fv=Array.from(new Set(flush)).sort(function(a,b){return b-a});if(fv.indexOf(14)>=0)fv.push(1);for(var f=0;f<=fv.length-5;f++)if(fv[f]-fv[f+4]===4)return [8,fv[f]]}
+ if(groups[0][0]===4)return [7,groups[0][1],groups[1][1]];
+ var tri=groups.find(function(g){return g[0]===3});var pairs=groups.filter(function(g){return g[0]===2});
+ if(tri&&pairs.length)return [6,tri[1],pairs[0][1]];
+ if(flush)return [5].concat(Array.from(new Set(flush)).sort(function(a,b){return b-a}).slice(0,5));
+ if(sh)return [4,sh];
+ if(tri)return [3,tri[1]].concat(groups.filter(function(g){return g[1]!==tri[1]}).map(function(g){return g[1]}).slice(0,2));
+ if(pairs.length>=2)return [2,pairs[0][1],pairs[1][1],groups.filter(function(g){return g[0]===1}).map(function(g){return g[1]})[0]||0];
+ if(pairs.length===1)return [1,pairs[0][1]].concat(groups.filter(function(g){return g[1]!==pairs[0][1]}).map(function(g){return g[1]}).slice(0,3));
+ return [0].concat(groups.map(function(g){return g[1]}).slice(0,5));
+}
+function cmp(a,b){for(var i=0;i<Math.max(a.length,b.length);i++){var x=a[i]||0,y=b[i]||0;if(x!==y)return x>y?1:-1}return 0}
+function showdown(){
+ var scores=S.players.map(function(p){return p.fold?[-1]:evaluate(p.cards.concat(S.board))});
+ var w=scores[0][0]===-1?1:scores[1][0]===-1?0:cmp(scores[0],scores[1]);
+ if(w===0){S.players[0].stack+=Math.floor(S.pot/2);S.players[1].stack+=S.pot-Math.floor(S.pot/2);S.winner=-1;log("Ничья · банк разделён")}
+ else{var wi=w>0?0:1;S.players[wi].stack+=S.pot;S.winner=wi;log(S.players[wi].name+" выигрывает "+money(S.pot)+" · "+handNames[scores[wi][0]])}
+ S.showdown=true;render();
+}
+function doRaise(i){
+ var el=document.getElementById("raise"+i),a=Number(el.value);if(!a)return;
+ act(i,S.currentBet?"raise":"bet",a);
+}
+function renderPlayer(i){
+ var p=S.players[i],call=callAmt(i),can=i===S.turn&&!p.fold&&!p.allin&&!S.showdown;
+ var min=S.currentBet+S.bb;
+ var actions=can?
+ '<div class="actions"><button class="btn '+(call?'disabled':'')+'" onclick="act('+i+',\\'check\\')">Чек</button><button class="btn gold '+(!call?'disabled':'')+'" onclick="act('+i+',\\'call\\')">Колл '+money(call)+'</button><button class="btn" onclick="doRaise('+i+')">Рейз</button><button class="btn danger fold" onclick="act('+i+',\\'fold\\')">Фолд</button><button class="btn" onclick="act('+i+',\\'allin\\')">ALL-IN</button></div><div class="raise"><input id="raise'+i+'" type="number" min="'+min+'" value="'+min+'"><button class="btn" onclick="doRaise('+i+')">Поставить</button></div>':'';
+ return '<article class="player '+(can?'active':'')+'"><div class="ph"><span class="name">'+esc(p.name)+(i===S.dealer?" · D":"")+'</span><span class="stack">'+money(p.stack)+'</span></div><div class="cards">'+card(p.cards[0],false)+card(p.cards[1],false)+'</div><div class="bet">На улице: '+money(S.contrib[i])+(p.allin?" · ALL-IN":"")+(p.fold?" · FOLD":"")+'</div>'+actions+'</article>';
+}
+function modal(){
+ if(S.winner===-1)return '<div class="modal"><div class="modal-card"><h2>Ничья</h2><div class="row"><span>Банк</span><b>'+money(S.pot)+'</b></div><div class="note">При одинаковой комбинации банк разделён между игроками.</div><button class="btn gold wide" onclick="nextHand()">Следующая раздача</button></div></div>';
+ var w=S.winner,score=evaluate(S.players[w].cards.concat(S.board));
+ var rows=S.players.map(function(p,i){return '<div class="row"><span>'+esc(p.name)+'</span><span>'+p.cards.map(ctext).join(" ")+'</span></div>'}).join("");
+ return '<div class="modal"><div class="modal-card"><h2>'+esc(S.players[w].name)+' забирает банк</h2><div class="row"><span>Комбинация</span><b class="win">'+handNames[score[0]]+'</b></div><div class="row"><span>Банк</span><b>'+money(S.pot)+'</b></div>'+rows+'<div class="note">Стек после раздачи: '+S.players.map(function(p){return esc(p.name)+" — "+money(p.stack)}).join(" · ")+'</div><button class="btn gold wide" onclick="nextHand()">Следующая раздача</button></div></div>';
+}
+function nextHand(){S.dealer=S.dealer===0?1:0;newHand()}
+function render(){
+ if(S.screen==="setup"){setup();return}
+ var sn={preflop:"Префлоп",flop:"Флоп",turn:"Тёрн",river:"Ривер"}[S.street]||"Шоудаун";
+ var board=S.board.length?S.board.map(function(c){return '<span class="card '+((c.suit==="♥"||c.suit==="♦")?"red":"")+'">'+ctext(c)+'</span>'}).join(""):'<span class="sub">Первые три карты появятся после торгов</span>';
+ var history=S.log.map(function(x){return "<div>• "+esc(x)+"</div>"}).join("")||'<div class="empty">История пуста</div>';
+ app.innerHTML='<main class="app"><header class="top"><div><div class="brand">♠ Poker</div><div class="sub">раздача #'+S.hand+' · '+sn+'</div></div><div><button class="btn" onclick="nextHand()">Новая раздача</button> <button class="btn" onclick="S.screen=\\'setup\\';render()">Новая сессия</button></div></header><section class="table"><div class="pot"><small>банк</small><b>'+money(S.pot)+'</b><div class="street">'+(S.showdown?"Шоудаун":"Ход: "+esc(S.players[S.turn].name))+'</div></div><div class="board">'+board+'</div><div class="players">'+renderPlayer(0)+renderPlayer(1)+'</div></section><section class="history"><h3>История действий</h3><div class="log">'+history+'</div></section></main>'+(S.showdown?modal():"");
+}
+setup();
+</script>
+</body>
+</html>
